@@ -1,0 +1,106 @@
+import cv2
+import numpy as np
+
+img = cv2.imread('img.jpg', 0)
+img_2 = cv2.imread('TV.jpg', 0)
+img = cv2.resize(img, (250,250))
+img_2 = cv2.resize(img_2, (250,250))
+
+# Tích chập
+def TichChap(img, matrix):
+    w, h = img.shape
+    img_new = np.zeros([h, w])
+    for i in range(1, h - 1):
+        for j in range(1, w - 1):
+            temp = (
+                img[i - 1, j - 1] * matrix[0, 0]\
+                + img[i - 1, j]     * matrix[0, 1]\
+                + img[i - 1, j + 1] * matrix[0, 2]\
+                + img[i, j - 1]     * matrix[1, 0]\
+                + img[i, j]         * matrix[1, 1]\
+                + img[i, j + 1]     * matrix[1, 2]\
+                + img[i + 1, j - 1] * matrix[2, 0]\
+                + img[i + 1, j]     * matrix[2, 1]\
+                + img[i + 1, j + 1] * matrix[2, 2]
+            )
+            img_new[i, j] = temp
+            img_new = img_new.astype(np.uint8)
+    return img_new
+
+LocTB = np.array((
+    [1/9, 1/9, 1/9],
+    [1/9, 1/9, 1/9],
+    [1/9, 1/9, 1/9]
+), dtype=float)
+
+
+def TrungVi(img):
+    w, h = img.shape
+    img_new = np.zeros([h, w])
+    for i in range(1, h - 1):
+        for j in range(1, w - 1):
+            temp = [
+                img[i - 1, j - 1],
+                img[i - 1, j],
+                img[i - 1, j + 1],
+                img[i, j - 1],
+                img[i, j],
+                img[i, j + 1],
+                img[i + 1, j - 1],
+                img[i + 1, j],
+                img[i + 1, j + 1]
+            ]
+            temp = sorted(temp)
+            img_new[i, j] = temp[4]
+            img_new = img_new.astype(np.uint8)
+    return img_new
+
+# SOBEL + LAPLACE
+def Convert(img, matrix):
+    img_h = img.shape[0]
+    img_w = img.shape[1]
+    mat_h = matrix.shape[0]
+    mat_w = matrix.shape[1]
+    img_conv = np.zeros(img.shape)
+    h = mat_h // 2 
+    w = mat_w // 2
+    for i in range(h, img_h - h):
+        for j in range(w, img_w - w):
+            tong = 0
+            for m in range(mat_h):
+                for n in range(mat_w):
+                    tong += matrix[m, n]*img[i - h + m, j - w + n]
+            img_conv[i, j] = tong
+    return img_conv
+
+kernel = np.array([
+    [0, -1, 0],
+    [-1, 4, -1],
+    [0, -1, 0]
+])
+laplace = Convert(img, kernel)
+laplace_2 = Convert(img_2, kernel)
+kernel = np.array([
+    [-1, -2, -1],
+    [0, 0, 0],
+    [1, 2, 1]
+])
+sobel = Convert(img, kernel)
+sobel_2 = Convert(img_2, kernel)
+Loc_Trung_Binh = TichChap(img, LocTB)
+Loc_Trung_Binh_2 = TichChap(img_2, LocTB)
+Loc_Trung_Vi = TrungVi(img)
+Loc_Trung_Vi_2 = TrungVi(img_2)
+cv2.imshow("Anh goc", img)
+cv2.imshow("Loc Trung Binh", Loc_Trung_Binh)
+cv2.imshow("Loc Trung Vi", Loc_Trung_Vi)
+cv2.imshow("SOBEL", sobel)
+cv2.imshow("LAPLACE", laplace)
+
+cv2.imshow("Anh goc 2", img_2)
+cv2.imshow("Loc Trung Binh 2", Loc_Trung_Binh_2)
+cv2.imshow("Loc Trung Vi 2", Loc_Trung_Vi_2)
+cv2.imshow("SOBEL 2", sobel_2)
+cv2.imshow("LAPLACE 2", laplace_2)
+cv2.waitKey()
+cv2.destroyAllWindows()
